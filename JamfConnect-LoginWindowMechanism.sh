@@ -1,15 +1,21 @@
 #!/bin/sh
 
-# Script will report whether the computer is
-# using the macOS login window or Jamf Connect
-# login window
+# LoginWindow Mechanism
+# more Infos: https://learn.jamf.com/en-US/bundle/jamf-connect-documentation-current/page/Editing_the_macOS_loginwindow_Application.html
 
-# Updated: 3.01.2022 @robjschroeder
+# Read authorization database once
+authdb_output=$(security authorizationdb read system.login.console)
 
-loginwindow_check=$(security authorizationdb read system.login.console | grep 'loginwindow:login' 2>&1 > /dev/null; echo $?)
+# Check for standard macOS login window mechanism
+loginwindow_check=$(echo "$authdb_output" | grep -q 'loginwindow:login'; echo $?)
+
+# Check for Jamf Connect specific mechanism
+jamf_connect_check=$(echo "$authdb_output" | grep -q 'JamfConnect'; echo $?)
 
 if [ $loginwindow_check == 0 ]; then
-    echo "<result>OS LoginWindow</result>"
+    echo "<result>macOS Default LoginWindow</result>"
+elif [ $jamf_connect_check == 0 ]; then
+    echo "<result>Jamf Connect LoginWindow</result>"
 else
-    echo "<result>JC LoginWindow</result>"
+    echo "<result>Modified LoginWindow (Unknown)</result>"
 fi
